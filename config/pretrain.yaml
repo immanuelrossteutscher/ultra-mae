@@ -1,0 +1,37 @@
+# MAE pretraining config.
+
+paths:
+  pretrain_file: pretrain.npz       # NPZ in --data dir, must contain key "signals" (n, signal_size)
+  output_subdir: logs/pretrain      # outputs land here (relative to --base)
+  model_name: mae_pre               # weights -> {model_name}.pth, config -> {model_name}_config.yaml
+
+preload_gpu: true                   # preload data onto GPU (faster, more memory)
+
+model:
+  signal_size: 512                  # length of one input signal in samples
+  patch_size: 32                    # signal_size must be divisible by patch_size
+  encoder:
+    projection_dim: 128             # token embedding dimension inside the encoder
+    num_heads: 4
+    head_dim: 64                    # head_dim need not equal projection_dim / num_heads
+    layers: 6                       # number of Transformer blocks
+    mlp_ratio: 2                    # MLP hidden size = mlp_ratio * projection_dim
+  decoder:
+    projection_dim: 64              # token embedding dimension inside the decoder
+    num_heads: 4
+    head_dim: 32
+    layers: 2
+    mlp_ratio: 2
+
+pretrain:
+  split: [0.8, 0.1, 0.1]            # train / val / test
+  split_seed: 42
+  mask_proportion: 0.75             # fraction of patches masked during pretraining
+  dropout: 0.0                      # applied inside patch encoder, encoder, decoder
+  batch_size: 1024
+  epochs: 800
+  warmup_epoch_percentage: 0.15     # linear LR warmup for this fraction of total steps, then cosine decay to 0
+  optimizer:
+    name: adamw                     # currently the only implemented optimizer for pretraining
+    learning_rate: 1.0e-3
+    weight_decay: 1.0e-4

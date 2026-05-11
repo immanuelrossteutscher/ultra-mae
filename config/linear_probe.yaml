@@ -1,0 +1,43 @@
+# Downstream config: linear probing of a pretrained MAE encoder.
+#
+# To use full fine-tuning instead, set:
+#     downstream.finetune_strategy: full
+#     (and optionally llrd_factor < 1.0 for ViT-style layer-wise LR decay)
+#
+# To run classification instead of regression, set:
+#     downstream.task_type: classification
+#     downstream.num_classes: K
+# and ensure the label array in your probing NPZ contains integer class IDs.
+
+paths:
+  downstream_file: probing.npz      # NPZ in --data dir, must contain "signals" + a label array
+  pretrain_subdir: logs/pretrain    # where {pretrain_name}.pth lives (relative to --base)
+  output_subdir: logs/probing       # outputs land here
+  pretrain_name: mae_pre            # filename stem of the pretrained MAE
+  model_name: mae_position_lp       # output filename stem; weights -> {model_name}.pth
+
+preload_gpu: true                   # preload data onto GPU (faster, more memory)
+
+# The MAE architecture is loaded from {pretrain_name}_config.yaml saved during
+# pretraining — a single source of truth for encoder shape.
+
+downstream:
+  task_type: regression             # "regression" or "classification"
+  num_classes: 1                    # 1 for regression; K for classification
+  factor: position                  # label key inside the probing NPZ
+  split: [0.3334, 0.3333, 0.3333]   # train / val / test
+  split_seed: 42
+  epochs: 30
+  batch_size: 128
+  finetune_strategy: linear         # "linear" or "full"
+  train_patch_encoder: false        # only used under "full"; unfreezes patch embedder
+  dropout: 0.0                      # dropout inside the encoder blocks (rebuilt for downstream)
+  head_dropout: 0.0                 # dropout before the linear head; auto-forced to 0 under "linear"
+  llrd_factor: 1.0                  # 1.0 = no LLRD; <1.0 enables ViT-style layer-wise LR decay
+  warmup_epoch_percentage: 0.1      # linear LR warmup for this fraction of total steps, then cosine decay to 0
+  optimizer:
+    name: sgd                       # currently the only implemented optimizer for downstream
+    learning_rate: 0.002
+    momentum: 0.9
+    nesterov: true
+    weight_decay: 0

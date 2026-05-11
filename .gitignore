@@ -1,0 +1,24 @@
+# Training outputs
+logs/
+*.pth
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Local notes
+HANDOFF.md
+RELEASE_NOTES_*.md
